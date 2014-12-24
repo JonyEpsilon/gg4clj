@@ -1,7 +1,12 @@
+;;;; This file is part of gg4clj. Copyright (C) 2014-, Jony Hudson.
+;;;;
+;;;; gg4clj is licenced to you under the MIT licence. See the file LICENCE.txt for full details.
+
 (ns gg4clj.core
   (:import (java.io File))
   (:require [clojure.java.shell :as shell]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [gorilla-renderable.core :as render]))
 
 
 ;; * Functions for building R code *
@@ -59,6 +64,7 @@
   [:data.frame
    (apply hash-map (mapcat (fn [e] [(key e) (into [:c] (val e))]) data-map))])
 
+
 ;; * Functions for driving R *
 
 (defn- rscript
@@ -81,12 +87,14 @@
      command
      [:ggsave {:filename filepath :width 5 :height 3}]]))
 
-(defn render-ggplot
+(defn render
+  "Takes a ggplot2 command, expressed in the Clojure representation of R code, and returns the plot rendered to SVG
+  as a string."
   [plot-command]
-  (let [r-file (File/createTempFile "gorilla" ".r")
+  (let [r-file (File/createTempFile "gg4clj" ".r")
         r-path (.getAbsolutePath r-file)
         ;;_ (println r-path)
-        out-file (File/createTempFile "gorilla" ".svg")
+        out-file (File/createTempFile "gg4clj" ".svg")
         out-path (.getAbsolutePath out-file)
         _ (spit r-path (wrap-ggplot plot-command out-path))
         _ (rscript r-path)
@@ -94,3 +102,20 @@
         _ (.delete r-file)
         _ (.delete out-file)]
     rendered-plot))
+
+
+;; * Gorilla REPL rendering *
+
+(defrecord GGView [plot-command])
+
+;; This renderer displays the rendered SVG output, and attaches the plot-command (in Clojure) as
+;; the rendered item's value.
+(extend-type GGView
+  render/Renderable
+  (render [self]
+    {:type :html :content (render (:plot-command self)) :value (pr-str self)}))
+
+(defn view
+  "View a ggplot2 command, expressed in the Clojure representation of R code, in Gorilla REPL."
+  [plot-command]
+  (GGView. plot-command))
