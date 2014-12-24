@@ -105,7 +105,7 @@
   (let [ids (map last (re-seq #"id=\"(.*)\"" svg))
         id-map (zipmap ids (repeatedly (count ids) #(str (UUID/randomUUID))))
         fix-ids (fn [s id new-id] (string/replace s (str "id=\"" id "\"") (str "id=\"" new-id "\"")))
-        fix-refs (fn [s id new-id] (string/replace s (str "#" id) (str "#" new-id)))]
+        fix-refs (fn [s id new-id] (string/replace s (str "\"#" id "\"") (str "\"#" new-id "\"")))]
     (reduce #(fix-refs %1 %2 (get id-map %2))
             (reduce #(fix-ids %1 %2 (get id-map %2)) svg ids)
             ids)))
