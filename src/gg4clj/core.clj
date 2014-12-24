@@ -3,7 +3,8 @@
 ;;;; gg4clj is licenced to you under the MIT licence. See the file LICENCE.txt for full details.
 
 (ns gg4clj.core
-  (:import (java.io File))
+  (:import (java.io File)
+           (java.util UUID))
   (:require [clojure.java.shell :as shell]
             [clojure.string :as string]
             [gorilla-renderable.core :as render]))
@@ -87,6 +88,22 @@
      command
      [:ggsave {:filename filepath :width 5 :height 3}]]))
 
+(defn- mangle-ids
+  "ggplot produces SVGs with elements that have id attributes. These ids are unique within each plot, but are
+  generated in such a way that they clash when there's more than one plot in a document. This function takes
+  an SVG string and replaces the ids with globally unique ids. It returns a string.
+
+  This is a workaround which could be removed if there was a way to generate better SVG in R. Also:
+  http://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags/1732454#1732454"
+  [svg]
+  (let [ids (map last (re-seq #"id=\"(.*)\"" svg))
+        id-map (zipmap ids (repeatedly (count ids) #(str (UUID/randomUUID))))
+        fix-ids (fn [s id new-id] (string/replace s (str "id=\"" id "\"") (str "id=\"" new-id "\"")))
+        fix-refs (fn [s id new-id] (string/replace s (str "#" id) (str "#" new-id)))]
+    (reduce #(fix-refs %1 %2 (get id-map %2))
+            (reduce #(fix-ids %1 %2 (get id-map %2)) svg ids)
+            ids)))
+
 (defn render
   "Takes a ggplot2 command, expressed in the Clojure representation of R code, and returns the plot rendered to SVG
   as a string."
@@ -101,7 +118,7 @@
         rendered-plot (slurp out-path)
         _ (.delete r-file)
         _ (.delete out-file)]
-    rendered-plot))
+    (mangle-ids rendered-plot)))
 
 
 ;; * Gorilla REPL rendering *
@@ -113,7 +130,7 @@
 (extend-type GGView
   render/Renderable
   (render [self]
-    {:type :html :content (render (:plot-command self)) :value (pr-str self)}))
+    {:type :html :content (str (render (:plot-command self))) :value (pr-str self)}))
 
 (defn view
   "View a ggplot2 command, expressed in the Clojure representation of R code, in Gorilla REPL."
