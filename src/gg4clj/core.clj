@@ -88,11 +88,11 @@
 
 (defn- wrap-ggplot
   "Wraps the given R command with commands to load ggplot2 and save the last plot to the given file."
-  [command filepath]
+  [command filepath width height]
   (to-r
     [[:library :ggplot2]
      command
-     [:ggsave {:filename filepath :width 6 :height 3.5}]]))
+     [:ggsave {:filename filepath :width width :height height}]]))
 
 (defn- mangle-ids
   "ggplot produces SVGs with elements that have id attributes. These ids are unique within each plot, but are
@@ -112,33 +112,40 @@
 
 (defn render
   "Takes a ggplot2 command, expressed in the Clojure representation of R code, and returns the plot rendered to SVG
-  as a string."
-  [plot-command]
-  (let [r-file (File/createTempFile "gg4clj" ".r")
-        r-path (.getAbsolutePath r-file)
-        ;;_ (println r-path)
-        out-file (File/createTempFile "gg4clj" ".svg")
-        out-path (.getAbsolutePath out-file)
-        _ (spit r-path (wrap-ggplot plot-command out-path))
-        _ (rscript r-path)
-        rendered-plot (slurp out-path)
-        _ (.delete r-file)
-        _ (.delete out-file)]
-    (mangle-ids rendered-plot)))
+  as a string. Options can be passed in a second argument, if wished, as a map. Supported options are :width of plot
+  (in inches!) and :height. If only :width is given then a sensible default height will be chosen."
+  ([plot-command] (render plot-command {}))
+  ([plot-command options]
+   (let [width (or (:width options) 6.5)
+         height (or (:height options) (/ width 1.618))
+         r-file (File/createTempFile "gg4clj" ".r")
+         r-path (.getAbsolutePath r-file)
+         ;;_ (println r-path)
+         out-file (File/createTempFile "gg4clj" ".svg")
+         out-path (.getAbsolutePath out-file)
+         _ (spit r-path (wrap-ggplot plot-command out-path width height))
+         _ (rscript r-path)
+         rendered-plot (slurp out-path)
+         _ (.delete r-file)
+         _ (.delete out-file)]
+     (mangle-ids rendered-plot))))
 
 
 ;; * Gorilla REPL rendering *
 
-(defrecord GGView [plot-command])
+(defrecord GGView [plot-command options])
 
 ;; This renderer displays the rendered SVG output, and attaches the plot-command (in Clojure) as
 ;; the rendered item's value.
 (extend-type GGView
   render/Renderable
   (render [self]
-    {:type :html :content (str (render (:plot-command self))) :value (pr-str self)}))
+    {:type :html :content (render (:plot-command self) (:options self)) :value (pr-str self)}))
 
 (defn view
-  "View a ggplot2 command, expressed in the Clojure representation of R code, in Gorilla REPL."
-  [plot-command]
-  (GGView. plot-command))
+  "View a ggplot2 command, expressed in the Clojure representation of R code, in Gorilla REPL. Options can be passed
+  in a second argument, if wished, as a map. Supported options are :width of plot (in inches!) and :height. If only
+  :width is given then a sensible default height will be chosen."
+  ([plot-command] (view plot-command {}))
+  ([plot-command options]
+   (GGView. plot-command options)))
