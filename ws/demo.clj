@@ -11,7 +11,7 @@
 ;; **
 
 ;; @@
-(ns calm-summit
+(ns gg4clj.demo
   (:require [gorilla-plot.core :as plot]
             [gorilla-repl.html :as html]
             [gg4clj.core :as gg4clj]))
