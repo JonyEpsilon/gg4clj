@@ -44,6 +44,12 @@
   [arg-map]
   (string/join ", " (map #(str (name %) " = " (to-r (% arg-map))) (keys arg-map))))
 
+(defn r+
+  "A helper function for adding things together (i.e. ggplot2 layers). Call it with the arguments you want
+  to add together, in the same manner as core/+."
+  [& args]
+  (reduce (fn [a b] [:+ a b]) args))
+
 (defn to-r
   "Takes a Clojure representation of R code, and returns the corresponding R code as a string."
   [code]
@@ -86,7 +92,7 @@
   (to-r
     [[:library :ggplot2]
      command
-     [:ggsave {:filename filepath :width 5 :height 3}]]))
+     [:ggsave {:filename filepath :width 6 :height 3.5}]]))
 
 (defn- mangle-ids
   "ggplot produces SVGs with elements that have id attributes. These ids are unique within each plot, but are
