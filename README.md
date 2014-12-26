@@ -13,7 +13,7 @@ An example using one of R's built-in datasets:
 (gg4clj/view [:qplot :mpg :hp {:data :mtcars :color [:factor :cyl]}])
 ```
 
-![Simple example plot](example1.svg)
+![Simple example plot](example1.png)
 
 ```clojure
 (defn b-m
@@ -37,7 +37,7 @@ An example using one of R's built-in datasets:
              {:width 5 :height 5})
 ```
 
-![Example plot](example2.svg)
+![Example plot](example2.png)
 
 See more examples in the `ws/demo.clj` worksheet, which you can view here:
 
