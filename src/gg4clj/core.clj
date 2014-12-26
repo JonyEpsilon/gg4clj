@@ -94,7 +94,7 @@
      command
      [:ggsave {:filename filepath :width width :height height}]]))
 
-(defn- mangle-ids
+(defn mangle-ids
   "ggplot produces SVGs with elements that have id attributes. These ids are unique within each plot, but are
   generated in such a way that they clash when there's more than one plot in a document. This function takes
   an SVG string and replaces the ids with globally unique ids. It returns a string.
@@ -102,13 +102,12 @@
   This is a workaround which could be removed if there was a way to generate better SVG in R. Also:
   http://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags/1732454#1732454"
   [svg]
-  (let [ids (map last (re-seq #"id=\"(.*)\"" svg))
-        id-map (zipmap ids (repeatedly (count ids) #(str (UUID/randomUUID))))
-        fix-ids (fn [s id new-id] (string/replace s (str "id=\"" id "\"") (str "id=\"" new-id "\"")))
-        fix-refs (fn [s id new-id] (string/replace s (str "\"#" id "\"") (str "\"#" new-id "\"")))]
-    (reduce #(fix-refs %1 %2 (get id-map %2))
-            (reduce #(fix-ids %1 %2 (get id-map %2)) svg ids)
-            ids)))
+  (let [ids (map last (re-seq #"id=\"([^\"]*)\"" svg))
+        id-map (zipmap ids (repeatedly (count ids) #(str (UUID/randomUUID))))]
+    (-> svg
+        (string/replace #"id=\"([^\"]*)\"" #(str "id=\"" (get id-map (last %)) "\""))
+        (string/replace #"\"#([^\"]*)\"" #(str "\"#" (get id-map (last %)) "\""))
+        (string/replace #"url\(#([^\"]*)\)" #(str "url(#" (get id-map (last %)) ")")))))
 
 (defn render
   "Takes a ggplot2 command, expressed in the Clojure representation of R code, and returns the plot rendered to SVG
