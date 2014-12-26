@@ -7,13 +7,7 @@ plots to be displayed inline in Gorilla worksheets. It is not a Clojure rewrite 
 installed on your system (see below), to render the plots. You'll need to be familiar with R and ggplot2, or else the
 commands will seem fairly cryptic.
 
-An example using one of R's built-in datasets:
-
-```clojure
-(gg4clj/view [:qplot :mpg :hp {:data :mtcars :color [:factor :cyl]}])
-```
-
-![Simple example plot](example1.png)
+An example, generating some random numbers in Clojure, and then plotting a 2D-density in ggplot:
 
 ```clojure
 (defn b-m
@@ -37,7 +31,7 @@ An example using one of R's built-in datasets:
              {:width 5 :height 5})
 ```
 
-![Example plot](example2.png)
+![Example plot](example.png)
 
 See more examples in the `ws/demo.clj` worksheet, which you can view here:
 
