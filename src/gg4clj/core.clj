@@ -94,7 +94,7 @@
      command
      [:ggsave {:filename filepath :width width :height height}]]))
 
-(defn mangle-ids
+(defn- mangle-ids
   "ggplot produces SVGs with elements that have id attributes. These ids are unique within each plot, but are
   generated in such a way that they clash when there's more than one plot in a document. This function takes
   an SVG string and replaces the ids with globally unique ids. It returns a string.
